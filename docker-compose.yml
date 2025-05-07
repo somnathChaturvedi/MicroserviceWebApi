@@ -1,0 +1,68 @@
+services:
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: sqlserver
+    user: root
+    volumes:
+      - sqlserver_data:/var/opt/mssql/data
+    networks:
+      - app-network
+    command:
+      - /bin/bash
+      - -c
+      - |
+        apt-get update && apt-get install -y mssql-tools && \
+        /opt/mssql/bin/sqlservr
+    environment:
+      SA_PASSWORD: "Som@123456"
+      ACCEPT_EULA: "Y"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -U sa -P Som@123456 -Q \"SELECT 1\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "1433:1433"
+
+  product:
+    build:
+      context: ./ProductMicroservice
+      dockerfile: Dockerfile
+    container_name: product_service
+    ports:
+      - "5003:8083"
+    depends_on:
+      mssql:
+        condition: service_healthy
+    networks:
+      - app-network
+    environment:
+      - ASPNETCORE_URLS=http://*:8083  
+      - ConnectionStrings__DefaultConnection=Server=mssql;Database=productDb;User Id=sa;Password=Som@123456;Encrypt=False;MultipleActiveResultSets=true;TrustServerCertificate=True;
+    expose:
+      - 8083
+
+  gateway:
+    build:
+      context: ./GatewayWebApi
+      dockerfile: Dockerfile
+    container_name: gateway_api
+    ports:
+      - "5000:8080"
+    depends_on:
+      - product
+      - mssql
+    networks:
+      - app-network
+    environment:
+      - ASPNETCORE_URLS=http://*:8080
+    expose:
+      - 8080
+
+volumes:
+  sqlserver_data:
+
+networks:
+  app-network:
+    driver: bridge

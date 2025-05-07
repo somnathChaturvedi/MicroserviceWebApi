@@ -1,0 +1,67 @@
+{
+    "Routes": [
+        {
+            "DownstreamPathTemplate": "/api/cart/{userId}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "cart", // Docker service name
+                    "Port": 8081 // Internal container port
+                }
+            ],
+            "UpstreamPathTemplate": "/gateway/GetCart/{userId}",
+            "UpstreamHttpMethod": [ "POST", "PUT", "GET" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/product",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "product", // Docker service name
+                    "Port": 8083 // Internal container port
+                }
+            ],
+            "UpstreamPathTemplate": "/gateway/product",
+            "UpstreamHttpMethod": [ "POST", "PUT", "GET" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/product/{id}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "product",
+                    "Port": 8083
+                }
+            ],
+            "UpstreamPathTemplate": "/gateway/product/{id}",
+            "UpstreamHttpMethod": [ "GET", "DELETE" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/customer",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "customer", // Docker service name
+                    "Port": 8082 // Internal container port
+                }
+            ],
+            "UpstreamPathTemplate": "/gateway/customer",
+            "UpstreamHttpMethod": [ "POST", "PUT", "GET" ]
+        },
+        {
+            "DownstreamPathTemplate": "/api/customer/{id}",
+            "DownstreamScheme": "http",
+            "DownstreamHostAndPorts": [
+                {
+                    "Host": "customer",
+                    "Port": 8082
+                }
+            ],
+            "UpstreamPathTemplate": "/gateway/customer/{id}",
+            "UpstreamHttpMethod": [ "GET", "DELETE" ]
+        }
+    ],
+    "GlobalConfiguration": {
+        "BaseUrl": "http://gateway:8080" // Gateway's internal URL
+    }
+}
