@@ -9,12 +9,14 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Polly;
 
 namespace CustomerMicroservice
 {
@@ -41,7 +43,7 @@ namespace CustomerMicroservice
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version = "v1",
-                    Title = "Product Microservice API",
+                    Title = "Customer Microservice API",
                 });
 
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -62,6 +64,15 @@ namespace CustomerMicroservice
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var retryPolicy = Policy
+                    .Handle<SqlException>()
+                    .WaitAndRetry(10, retryAttempt => TimeSpan.FromSeconds(5));
+
+                retryPolicy.Execute(() => db.Database.Migrate());
+            }
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

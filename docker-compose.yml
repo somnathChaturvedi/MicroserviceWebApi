@@ -1,4 +1,23 @@
 services:
+    
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  cart:
+    build:
+      context: ./CartMicroservice
+      dockerfile: Dockerfile
+    ports:
+      - "5001:8081"
+    environment:
+      - ASPNETCORE_URLS=http://*:8081
+    expose:
+      - 8081 
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2019-latest
@@ -24,7 +43,25 @@ services:
       retries: 20
     ports:
       - "1433:1433"
-
+  
+  customer:
+    build:
+      context: ./CustomerMicroservice
+      dockerfile: Dockerfile
+    container_name: customer_service
+    ports:
+      - "5002:8082"
+    depends_on:
+      mssql:
+        condition: service_healthy
+    networks:
+      - app-network
+    environment:
+      - ASPNETCORE_URLS=http://*:8082
+      - ConnectionStrings__DefaultConnection=Server=mssql;Database=customerDb;User Id=sa;Password=Som@123456;Encrypt=False;MultipleActiveResultSets=true;TrustServerCertificate=True;
+    expose:
+      - 8082 
+ 
   product:
     build:
       context: ./ProductMicroservice
@@ -53,6 +90,9 @@ services:
     depends_on:
       - product
       - mssql
+      - cart
+      - customer
+      - redis
     networks:
       - app-network
     environment:
